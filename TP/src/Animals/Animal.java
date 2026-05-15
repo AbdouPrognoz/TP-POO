@@ -1,5 +1,8 @@
 package Animals;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class Animal {
 
     private String id;
@@ -7,6 +10,8 @@ public abstract class Animal {
     private int age;
     private double weight;
     private HealthStatus healthStatus;
+
+    private List<HealthEvent> healthEvents = new ArrayList<>();
 
     public Animal(String id, String species, int age, double weight, HealthStatus healthStatus) {
         this.id = id;
@@ -25,6 +30,9 @@ public abstract class Animal {
     public void setAge(int age) { this.age = age; }
     public void setWeight(double weight) { this.weight = weight; }
     public void setHealthStatus(HealthStatus status) { this.healthStatus = status; }
+
+    public void addHealthEvent(HealthEvent event) { healthEvents.add(event); }
+    public List<HealthEvent> getHealthEvents() { return healthEvents; }
 
     public abstract String getCategory();
 }
