@@ -217,9 +217,15 @@ public class FarmSystem {
 
     public void changeSensorStatus(String sensorId, SensorStatus status) {
         Sensor sensor = findSensorById(sensorId);
-        if (sensor != null) {
-            sensor.setStatus(status);
+        if (sensor == null) {
+            return;
         }
+        Zone zone = sensor.getZone();
+        if (zone != null && zone.getStatus() == StatusZone.SUSPENDED) {
+            System.out.println("Sensor status cannot change because the zone is suspended.");
+            return;
+        }
+        sensor.setStatus(status);
     }
 
     public Reading addNumericReading(String sensorId, String readingId, String timestamp, double value) {
