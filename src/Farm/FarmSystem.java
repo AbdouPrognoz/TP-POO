@@ -7,11 +7,7 @@ import Readings.*;
 import Sensors.*;
 import Zone.*;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +16,7 @@ import java.util.NoSuchElementException;
 public class FarmSystem {
 
     private final Map<String, Zone> zones = new HashMap<>();
-    private final Map<String, Sensor> sensors = new HashMap<>();
-    private final List<Reading> readings = new ArrayList<>();
-    private final List<Alert> alerts = new ArrayList<>();
+    private final AlertRepository alertRepository = new AlertRepository();
 
     private Zone getZone(String code) {
         Zone zone = zones.get(code);
@@ -206,18 +200,19 @@ public class FarmSystem {
         if (sensor.getZone() == null) {
             throw new IllegalArgumentException("Sensor must be attached to a zone.");
         }
-        if (!zones.containsKey(sensor.getZone().getCode())) {
-            throw new IllegalArgumentException("Sensor zone is not registered: " + sensor.getZone().getCode());
-        }
-        sensors.put(sensor.getId(), sensor);
+        Zone zone = getZone(sensor.getZone().getCode());
+        zone.addSensor(sensor);
     }
 
     public Sensor findSensorById(String sensorId) {
-        Sensor sensor = sensors.get(sensorId);
-        if (sensor != null) {
-            System.out.println("Sensor found ");
+        for (Zone zone : zones.values()) {
+            Sensor sensor = zone.findSensorById(sensorId);
+            if (sensor != null) {
+                System.out.println("Sensor found ");
+                return sensor;
+            }
         }
-        return sensor;
+        return null;
     }
 
     public void changeSensorStatus(String sensorId, SensorStatus status) {
@@ -235,10 +230,9 @@ public class FarmSystem {
 
         Reading reading = numericSensor.recordReading(readingId, timestamp, value);
         if (reading != null) {
-            readings.add(reading);
             Alert alert = createAlertIfNeeded(reading);
             if (alert != null) {
-                alerts.add(alert);
+                alertRepository.add(alert);
             }
         }
         return reading;
@@ -251,114 +245,61 @@ public class FarmSystem {
         }
 
         Reading reading = gpsSensor.recordReading(readingId, timestamp, latitude, longitude);
-        if (reading != null) {
-            readings.add(reading);
-        }
         return reading;
     }
 
     public List<Reading> getReadingsBySensor(String sensorId) {
-        List<Reading> result = new ArrayList<>();
-        for (Reading reading : readings) {
-            if (reading.getSensorId().equals(sensorId)) {
-                result.add(reading);
-            }
+        Sensor sensor = findSensorById(sensorId);
+        if (sensor == null) {
+            return new ArrayList<>();
         }
-        return result;
+        return new ArrayList<>(sensor.getHistory());
     }
 
     public List<Reading> getReadingsByZone(String zoneCode) {
         List<Reading> result = new ArrayList<>();
-        for (Sensor sensor : sensors.values()) {
-            Zone zone = sensor.getZone();
-            if (zone != null && zone.getCode().equals(zoneCode)) {
-                result.addAll(sensor.getHistory());
-            }
+        Zone zone = getZone(zoneCode);
+        for (Sensor sensor : zone.getSensors()) {
+            result.addAll(sensor.getHistory());
         }
         return result;
     }
 
     public List<Reading> getReadingsByZoneAndPeriod(String zoneCode, String startTimestamp, String endTimestamp) {
         List<Reading> result = new ArrayList<>();
-        for (Sensor sensor : sensors.values()) {
-            Zone zone = sensor.getZone();
-            if (zone != null && zone.getCode().equals(zoneCode)) {
-                result.addAll(sensor.getHistoryBetween(startTimestamp, endTimestamp));
-            }
+        Zone zone = getZone(zoneCode);
+        for (Sensor sensor : zone.getSensors()) {
+            result.addAll(sensor.getHistoryBetween(startTimestamp, endTimestamp));
         }
         return result;
     }
 
     public List<Alert> getActiveAlertsSorted() {
-        List<Alert> active = new ArrayList<>();
-        for (Alert alert : alerts) {
-            if (alert.getStatus() == AlertStatus.ACTIVE) {
-                active.add(alert);
-            }
-        }
-        active.sort(Comparator.comparing(Alert::getSeverity).reversed());
-        return active;
+        return alertRepository.getActiveSorted();
     }
 
     public void acknowledgeAlert(String alertId) {
-        Alert alert = findAlertById(alertId);
-        if (alert != null) {
-            alert.acknowledge();
-        }
+        alertRepository.acknowledge(alertId);
     }
 
     public void deleteAlert(String alertId) {
-        Alert alert = findAlertById(alertId);
-        if (alert != null) {
-            alert.delete();
-        }
+        alertRepository.delete(alertId);
     }
 
     public List<Alert> getAlertsHistory() {
-        return Collections.unmodifiableList(alerts);
+        return alertRepository.getHistory();
     }
 
     public List<Alert> filterAlertsBySeverity(Severity severity) {
-        List<Alert> result = new ArrayList<>();
-        for (Alert alert : alerts) {
-            if (alert.getSeverity() == severity) {
-                result.add(alert);
-            }
-        }
-        return result;
+        return alertRepository.filterBySeverity(severity);
     }
 
     public List<Alert> filterAlertsBySensor(String sensorId) {
-        List<Alert> result = new ArrayList<>();
-        for (Alert alert : alerts) {
-            if (alert.getSensorId().equals(sensorId)) {
-                result.add(alert);
-            }
-        }
-        return result;
+        return alertRepository.filterBySensor(sensorId);
     }
 
     public List<Alert> filterAlertsByPeriod(String startTimestamp, String endTimestamp) {
-        List<Alert> result = new ArrayList<>();
-        LocalDateTime start = parseTimestamp(startTimestamp);
-        LocalDateTime end = parseTimestamp(endTimestamp);
-        for (Alert alert : alerts) {
-            LocalDateTime timestamp = parseTimestamp(alert.getTimestamp());
-            if ((timestamp.isEqual(start) || timestamp.isAfter(start))
-                    && (timestamp.isEqual(end) || timestamp.isBefore(end))) {
-                result.add(alert);
-            }
-        }
-        return result;
-    }
-
-    private Alert findAlertById(String alertId) {
-        for (Alert alert : alerts) {
-            if (alert.getId().equals(alertId)) {
-                return alert;
-            }
-        }
-        return null;
+        return alertRepository.filterByPeriod(startTimestamp, endTimestamp);
     }
 
     private Alert createAlertIfNeeded(Reading reading) {
@@ -378,7 +319,5 @@ public class FarmSystem {
         );
     }
 
-    private LocalDateTime parseTimestamp(String timestamp) {
-        return LocalDateTime.parse(timestamp, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-    }
+    
 }
