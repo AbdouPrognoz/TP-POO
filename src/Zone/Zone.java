@@ -15,7 +15,7 @@ public abstract class Zone {
     private String name;
     private String type;
     private StatusZone status = StatusZone.ACTIVE;
-    private double production = 0;
+    private final List<ProductionRecord> productionHistory = new ArrayList<>();
     private final List<Sensor> sensors = new ArrayList<>();
     private final Set<String> zoneSuspendedSensorIds = new HashSet<>();
 
@@ -29,10 +29,11 @@ public abstract class Zone {
     public String getName() { return name; }
     public String getType() { return type; }
     public StatusZone getStatus() { return status; }
-    public double getProduction() { return production; }
+    public List<ProductionRecord> getProductionHistory() { return Collections.unmodifiableList(productionHistory); }
 
-    public void setName(String name) { this.name = name; }
-    public void setType(String type) { this.type = type; }
+    public void addProductionRecord(ProductionRecord record) {
+        productionHistory.add(record);
+    }
 
     public void suspend() {
         this.status = StatusZone.SUSPENDED;
@@ -56,8 +57,8 @@ public abstract class Zone {
         zoneSuspendedSensorIds.clear();
     }
 
-    public double productionLevel() { return production; }
-    public void setProduction(double production) { this.production = production; }
+    public void setName(String name) { this.name = name; }
+    public void setType(String type) { this.type = type; }
 
     public void addSensor(Sensor sensor) {
         if (sensor == null) {

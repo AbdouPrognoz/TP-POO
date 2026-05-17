@@ -2,6 +2,7 @@ import Alerts.*;
 import Animals.*;
 import Crops.*;
 import Farm.FarmSystem;
+import Readings.*;
 import Sensors.*;
 import Zone.*;
 
@@ -11,80 +12,45 @@ public class Main {
     public static void main(String[] args) {
         FarmSystem farm = new FarmSystem();
 
-        CropZone cropZone = new CropZone("CZ1", "Crop Zone 1", "CROP");
-        LivestockZone livestockZone = new LivestockZone("LZ1", "Livestock Zone 1", "LIVESTOCK");
-        AquacultureZone aquacultureZone = new AquacultureZone("AZ1", "Aqua Zone 1", "AQUACULTURE");
+        // 1. Setup Zones
+        CropZone cropZone = new CropZone("CZ1", "Wheat Field", "CROP");
+        LivestockZone livestockZone = new LivestockZone("LZ1", "Pasture", "LIVESTOCK");
+        // Set boundary: Center (0,0) with radius 10
+        livestockZone.setBoundary(new Coordinates(0, 0), 10.0);
 
         farm.addZone(cropZone);
         farm.addZone(livestockZone);
-        farm.addZone(aquacultureZone);
 
-        farm.editZone("CZ1", "Updated Crop Zone", null);
-        farm.deactivateZone("AZ1");
-        farm.reactivateZone("AZ1");
-        farm.recordProduction("CZ1", 2500.0);
+        // 2. Test Polymorphic Production History
+        System.out.println("--- Testing Production History ---");
+        farm.recordProduction(cropZone, new CropProductionRecord(LocalDate.now(), "C1", 500.5));
+        farm.recordProduction(livestockZone, new LivestockProductionRecord(LocalDate.now(), "A1", 250.0));
+        
+        System.out.println("Crop Zone History: " + cropZone.getProductionHistory().get(0).getDetails());
+        System.out.println("Livestock Zone History: " + livestockZone.getProductionHistory().get(0).getDetails());
 
-        farm.registerCrop("CZ1", new Cereals("C1",
-                LocalDate.of(2026, 1, 10),
-                LocalDate.of(2026, 7, 10),
-                GrowthStage.SOWING,
-                6.0, 7.5, 40, 70,
-                C.WHEAT));
+        // 3. Test Sensor Reassignment and Animal Tracking
+        System.out.println("\n--- Testing Boundary Alerts ---");
+        Land cow = new Land("A1", Ruminant.COW, 5, 250.0, HealthStatus.HEALTHY);
+        farm.registerAnimal("LZ1", cow);
 
-        farm.registerCrop("CZ1", new Vegetables("V1",
-                LocalDate.of(2026, 2, 1),
-                LocalDate.of(2026, 6, 1),
-                GrowthStage.GERMINATION,
-                5.5, 7.0, 45, 75,
-                V.TOMATO));
+        GpsSensor gps = new GpsSensor("GPS-1", null); // Zone null, as it's attached to animal
+        cow.addSensor(gps);
+        System.out.println("Cow sensors count: " + cow.getSensors().size());
 
-        farm.updateCropStage("CZ1", "C1", GrowthStage.GROWTH);
-        farm.displayCropStage("CZ1", "C1");
-        farm.displayAllCropStages("CZ1");
-        farm.cropStatusReport("CZ1");
+        // Test valid position (5, 5) - distance 7.07 < 10
+        System.out.println("Recording valid position...");
+        farm.addGpsReading("GPS-1", "R-1", "2026-05-20T10:00", 5.0, 5.0);
+        
+        // Test invalid position (15, 15) - distance 21.2 > 10
+        System.out.println("Recording out-of-bounds position (15,15)...");
+        farm.addGpsReading("GPS-1", "R-2", "2026-05-20T11:00", 15.0, 15.0);
 
-        farm.registerAnimal("LZ1", new Land("A1", Poultry.CHICKEN, 1, 2.1, HealthStatus.HEALTHY));
-        farm.registerAnimal("LZ1", new Land("A2", Ruminant.COW, 3, 250.0, HealthStatus.HEALTHY));
-        farm.registerAnimal("AZ1", new Aqua("AQ1", AquaSpecies.FISH, 1, 0.8, HealthStatus.HEALTHY));
-
-        farm.logIllness("LZ1", "A1", "Flu symptoms");
-        farm.logWeightChange("LZ1", "A2", 260.0);
-
-        farm.defineFeedingProgram("LZ1", "Corn Feed", 0.25);
-        farm.displayFeedingSchedule("LZ1");
-
-        EnvironmentalSensor tempSensor = new EnvironmentalSensor(
-                "ENV-1",
-                cropZone,
-                10.0,
-                30.0,
-                "C",
-                EnvironmentalMetric.TEMPERATURE
-        );
-        SoilSensor soilSensor = new SoilSensor(
-                "SOIL-1",
-                cropZone,
-                6.0,
-                8.0,
-                "pH",
-                SoilMetric.PH
-        );
-        GpsSensor gpsSensor = new GpsSensor("GPS-1", cropZone);
-
-        farm.addSensor(tempSensor);
-        farm.addSensor(soilSensor);
-        farm.addSensor(gpsSensor);
-
-        farm.addNumericReading("ENV-1", "R-1", "2026-05-10T10:00", 20.0);
-        farm.addNumericReading("ENV-1", "R-2", "2026-05-10T11:00", 35.0);
-        farm.addNumericReading("ENV-1", "R-3", "2026-05-10T12:00", 50.0);
-        farm.addNumericReading("SOIL-1", "R-4", "2026-05-10T12:05", 7.0);
-        farm.addGpsReading("GPS-1", "R-5", "2026-05-10T12:30", 36.75, 3.06);
-
-        System.out.println("Readings by ENV-1: " + farm.getReadingsBySensor("ENV-1").size());
-        System.out.println("Readings by CZ1: " + farm.getReadingsByZone("CZ1").size());
-        System.out.println("Alerts: " + farm.getAlertsHistory().size());
-        System.out.println("Critical alerts: " + farm.filterAlertsBySeverity(Severity.CRITICAL).size());
-        System.out.println("Active alerts sorted: " + farm.getActiveAlertsSorted().size());
+        // 4. Verify Alerts
+        System.out.println("\n--- Verifying Alerts ---");
+        System.out.println("Total alerts generated: " + farm.getAlertsHistory().size());
+        for (Alert alert : farm.getAlertsHistory()) {
+            System.out.println("Alert: " + alert.getMessage() + " | Severity: " + alert.getSeverity());
+        }
     }
 }

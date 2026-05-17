@@ -81,8 +81,8 @@ public class FarmSystem {
         }
     }
 
-    public void recordProduction(String zoneCode, double value) {
-        getZone(zoneCode).setProduction(value);
+    public void recordProduction(Zone zone, ProductionRecord record) {
+        zone.addProductionRecord(record);
     }
 
     public void registerCrop(String zoneCode, Crops crop) {
@@ -197,11 +197,16 @@ public class FarmSystem {
         if (sensor == null) {
             throw new IllegalArgumentException("Sensor cannot be null.");
         }
-        if (sensor.getZone() == null) {
-            throw new IllegalArgumentException("Sensor must be attached to a zone.");
+        if (sensor.getZone() != null) {
+            Zone zone = getZone(sensor.getZone().getCode());
+            zone.addSensor(sensor);
+        } else if (sensor instanceof BiometricSensor || sensor instanceof GpsSensor) {
+            // Logic to find animal associated with this sensor needs to be implemented or handled.
+            // For now, we assume the sensor is added to the system via its associated animal.
+            // This part might need further refinement based on how animal sensors are registered.
+        } else {
+            throw new IllegalArgumentException("Sensor must be attached to a zone or animal.");
         }
-        Zone zone = getZone(sensor.getZone().getCode());
-        zone.addSensor(sensor);
     }
 
     public Sensor findSensorById(String sensorId) {
@@ -251,6 +256,27 @@ public class FarmSystem {
         }
 
         Reading reading = gpsSensor.recordReading(readingId, timestamp, latitude, longitude);
+        
+        // Find animal associated with the sensor
+        for (Zone zone : zones.values()) {
+            if (zone instanceof LivestockZone lz) {
+                for (Land a : lz.getAnimals()) {
+                    boolean found = false;
+                    for (Sensor s : a.getSensors()) {
+                        if (s.getId().equals(sensor.getId())) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) {
+                        if (lz.isOutside(new Coordinates(latitude, longitude))) {
+                            alertRepository.add(new Alert("A-" + readingId, timestamp, sensorId, readingId, Severity.CRITICAL, AlertStatus.ACTIVE, "Animal " + a.getId() + " is out of bounds"));
+                        }
+                        break;
+                    }
+                }
+            }
+        }
         return reading;
     }
 
