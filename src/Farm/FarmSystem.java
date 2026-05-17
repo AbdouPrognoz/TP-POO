@@ -270,9 +270,10 @@ public class FarmSystem {
                     }
                     if (found) {
                         if (lz.isOutside(new Coordinates(latitude, longitude))) {
+                            System.out.println("Boundary violation detected for animal " + a.getId());
                             alertRepository.add(new Alert("A-" + readingId, timestamp, sensorId, readingId, Severity.CRITICAL, AlertStatus.ACTIVE, "Animal " + a.getId() + " is out of bounds"));
                         }
-                        break;
+                        return reading; // Found and checked, no need to continue
                     }
                 }
             }
