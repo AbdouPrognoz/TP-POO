@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.time.LocalDate;
 
 public abstract class Zone {
 
@@ -29,7 +30,27 @@ public abstract class Zone {
     public String getName() { return name; }
     public String getType() { return type; }
     public StatusZone getStatus() { return status; }
+
     public List<ProductionRecord> getProductionHistory() { return Collections.unmodifiableList(productionHistory); }
+
+    public List<ProductionRecord> getProductionHistoryBetween(LocalDate start, LocalDate end) {
+        if (start == null || end == null) {
+            throw new IllegalArgumentException("Start and end dates cannot be null.");
+        }
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("Start date must be before or equal to end date.");
+        }
+
+        List<ProductionRecord> result = new ArrayList<>();
+        for (ProductionRecord record : productionHistory) {
+            LocalDate d = record.getDate();
+            // inclusive range: start <= d <= end
+            if ((d.isEqual(start) || d.isAfter(start)) && (d.isEqual(end) || d.isBefore(end))) {
+                result.add(record);
+            }
+        }
+        return result;
+    }
 
     public void addProductionRecord(ProductionRecord record) {
         if (record == null) {

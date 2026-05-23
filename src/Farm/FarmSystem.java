@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.time.LocalDate;
 
 public class FarmSystem {
 
@@ -121,6 +122,24 @@ public class FarmSystem {
         for (Zone zone : zones.values()) {
             displayProductionHistory(zone.getCode());
             System.out.println();
+        }
+    }
+
+    public void displayProductionHistoryByDateRange(String zoneCode, LocalDate start, LocalDate end) {
+        Zone zone = getZone(zoneCode);
+
+        System.out.println("*** Production history for zone "
+                + zone.getCode() + " (" + zone.getName() + ")"
+                + " from " + start + " to " + end + " ***");
+
+        List<ProductionRecord> filtered = zone.getProductionHistoryBetween(start, end);
+        if (filtered.isEmpty()) {
+            System.out.println("(no production records in this period)");
+            return;
+        }
+
+        for (ProductionRecord record : filtered) {
+            System.out.println("- " + record.getDetails());
         }
     }
 
