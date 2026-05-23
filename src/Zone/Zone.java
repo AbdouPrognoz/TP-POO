@@ -32,9 +32,11 @@ public abstract class Zone {
     public List<ProductionRecord> getProductionHistory() { return Collections.unmodifiableList(productionHistory); }
 
     public void addProductionRecord(ProductionRecord record) {
+        if (record == null) {
+            throw new IllegalArgumentException("ProductionRecord cannot be null.");
+        }
         productionHistory.add(record);
     }
-
     public void suspend() {
         this.status = StatusZone.SUSPENDED;
         zoneSuspendedSensorIds.clear();  // we will refill this set

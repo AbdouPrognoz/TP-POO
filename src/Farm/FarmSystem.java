@@ -72,6 +72,7 @@ public class FarmSystem {
     }
 
     public void displayZonesOverview() {
+        System.out.println("Zones Overview : ");
         for (Zone zone : zones.values()) {
             System.out.println(
                     zone.getCode() + " | " + zone.getName() +
@@ -83,6 +84,44 @@ public class FarmSystem {
 
     public void recordProduction(Zone zone, ProductionRecord record) {
         zone.addProductionRecord(record);
+    }
+    public void recordProduction(String zoneCode, ProductionRecord record) {
+        Zone zone = getZone(zoneCode);
+        zone.addProductionRecord(record);
+    }
+
+    public void displayProductionHistory(String zoneCode) {
+        Zone zone = getZone(zoneCode);
+
+        System.out.println("*** Production history for zone "
+                + zone.getCode() + " (" + zone.getName() + ")"
+                + " | type=" + zone.getType()
+                + " | status=" + zone.getStatus()
+                + " ***");
+
+        List<ProductionRecord> history = zone.getProductionHistory();
+        if (history.isEmpty()) {
+            System.out.println("(no production records)");
+            return;
+        }
+
+        for (ProductionRecord record : history) {
+
+            System.out.println("- " + record.getDetails());
+        }
+    }
+    public void displayAllProductionHistories() {
+        System.out.println("*** Production history for ALL zones ***");
+
+        if (zones.isEmpty()) {
+            System.out.println("No zones registered.");
+            return;
+        }
+
+        for (Zone zone : zones.values()) {
+            displayProductionHistory(zone.getCode());
+            System.out.println();
+        }
     }
 
     public void registerCrop(String zoneCode, Crops crop) {

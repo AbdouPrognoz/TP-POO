@@ -44,7 +44,10 @@ public class Main {
 
         farm.cropStatusReport("CZ1");
 
-        farm.recordProduction(cropZone, new CropProductionRecord(LocalDate.now(), "W1", 1000.0));
+        farm.recordProduction("CZ1", new CropProductionRecord(LocalDate.now(), "W1", 1000.0));
+
+        farm.displayProductionHistory("CZ1");
+          //farm.displayAllProductionHistories();
 
         // 3. ANIMALS
         System.out.println("\n--- 3. ANIMALS MANAGEMENT ---");
