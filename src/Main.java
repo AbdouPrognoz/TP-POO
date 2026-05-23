@@ -9,45 +9,65 @@ import Zone.*;
 import java.time.LocalDate;
 
 public class Main {
+
     public static void main(String[] args) {
+
         FarmSystem farm = new FarmSystem();
 
-        // 1. Gérer les zones et les entités
-        System.out.println("--- 1. Gérer les zones ---");
-        CropZone cropZone = new CropZone("CZ1", "Zone Cultures", "CROP");
-        LivestockZone livestockZone = new LivestockZone("LZ1", "Zone Élevage", "LIVESTOCK");
+        // 1. ZONES
+        System.out.println("--- 1. ZONE MANAGEMENT ---");
+
+        CropZone cropZone = new CropZone("CZ1", "Crop Zone 1", "CROP");
+        AquacultureZone aquaZone = new AquacultureZone("AZ1", "Aqua Zone 1", "AQUACULTURE");
+        LivestockZone livestockZone = new LivestockZone("LZ1", "Livestock Zone 1", "LIVESTOCK");
         livestockZone.setBoundary(new Coordinates(0, 0), 10.0);
-        AquacultureZone aquaZone = new AquacultureZone("AZ1", "Zone Aquaculture", "AQUACULTURE");
-        
+
         farm.addZone(cropZone);
         farm.addZone(livestockZone);
         farm.addZone(aquaZone);
-        
-        farm.editZone("CZ1", "Zone Cultures Mise à Jour", "CROP");
+
+        farm.editZone("CZ1", "Updated Crop Zone 1", "CROP");
         farm.deactivateZone("AZ1");
         farm.reactivateZone("AZ1");
-        
-        // 2. Gérer les cultures
-        System.out.println("\n--- 2. Gérer les cultures ---");
+
+        // 2. CROPS
+        System.out.println("\n--- 2. CROPS MANAGEMENTS ---");
+
         Cereals wheat = new Cereals("W1", LocalDate.now(), LocalDate.now().plusMonths(6), GrowthStage.SOWING, 6.0, 7.5, 40, 70, C.WHEAT);
         farm.registerCrop("CZ1", wheat);
+
         farm.updateCropStage("CZ1", "W1", GrowthStage.GROWTH);
+
+        farm.displayCropStage("CZ1", "W1");
+
+          // farm.displayAllCropStages("CZ1");
+
         farm.cropStatusReport("CZ1");
+
         farm.recordProduction(cropZone, new CropProductionRecord(LocalDate.now(), "W1", 1000.0));
 
-        // 3. Gérer les animaux
-        System.out.println("\n--- 3. Gérer les animaux ---");
+        // 3. ANIMALS
+        System.out.println("\n--- 3. ANIMALS MANAGEMENT ---");
+
         Land cow = new Land("A1", Ruminant.COW, 5, 250.0, HealthStatus.HEALTHY);
         farm.registerAnimal("LZ1", cow);
-        farm.logIllness("LZ1", "A1", "Fièvre");
+
+        farm.logIllness("LZ1", "A1", "Fever");
         farm.logWeightChange("LZ1", "A1", 260.0);
-        farm.defineFeedingProgram("LZ1", "Fourrage", 5.0);
-        
+
+        farm.defineFeedingProgram("LZ1", "Corn Feed", 0.25);
+        farm.displayFeedingSchedule("LZ1");
+
+
         Aqua fish = new Aqua("AQ1", AquaSpecies.FISH, 1, 0.5, HealthStatus.HEALTHY);
         farm.registerAnimal("AZ1", fish);
 
+        farm.displayZonesOverview();
+
+
         // 4. Sensors & Alerts (Requirements: sensors on entities, boundary alerts)
-        System.out.println("\n--- 4. Capteurs et Alertes ---");
+
+        System.out.println("\n--- 4. ALERTS & SENSORS ---");
         GpsSensor gps = new GpsSensor("GPS-A1", null);
         cow.addSensor(gps);
         

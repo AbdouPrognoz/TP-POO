@@ -7,6 +7,7 @@ import java.util.List;
 public class AquacultureZone extends Zone {
 
     private List<Aqua> species = new ArrayList<>();
+    private FeedingProgram feedingProgram;
 
     public AquacultureZone(String code, String name, String type) {
         super(code, name, type);
@@ -17,6 +18,14 @@ public class AquacultureZone extends Zone {
     }
 
     public List<Aqua> getSpecies() { return species; }
+
+    public void setFeedingProgram(FeedingProgram program) {
+        this.feedingProgram = program;
+    }
+
+    public FeedingProgram getFeedingProgram() {
+        return feedingProgram;
+    }
 
     @Override
     public int getHostedCount() { return species.size(); }

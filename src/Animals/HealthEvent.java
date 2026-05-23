@@ -3,6 +3,7 @@ package Animals;
 import java.time.LocalDate;
 
 public class HealthEvent {
+
     private LocalDate date;
     private HealthEventType type;
     private String notes;

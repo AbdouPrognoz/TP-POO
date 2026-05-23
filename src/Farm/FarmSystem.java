@@ -179,19 +179,36 @@ public class FarmSystem {
 
     public void defineFeedingProgram(String zoneCode, String feedType, double quantityPerMeal) {
         Zone zone = getZone(zoneCode);
-        if (!(zone instanceof LivestockZone livestockZone)) {
-            throw new IllegalArgumentException("Zone is not livestock zone.");
+
+        if (zone instanceof LivestockZone livestockZone) {
+            livestockZone.setFeedingProgram(new FeedingProgram(feedType, quantityPerMeal));
+            return;
         }
-        livestockZone.setFeedingProgram(new FeedingProgram(feedType, quantityPerMeal));
+
+        if (zone instanceof AquacultureZone aquacultureZone) {
+            aquacultureZone.setFeedingProgram(new FeedingProgram(feedType, quantityPerMeal));
+            return;
+        }
+
+        throw new IllegalArgumentException("Zone is not an animal zone.");
     }
 
     public void displayFeedingSchedule(String zoneCode) {
         Zone zone = getZone(zoneCode);
-        if (!(zone instanceof LivestockZone livestockZone)) {
-            throw new IllegalArgumentException("Zone is not livestock zone.");
+
+        if (zone instanceof LivestockZone livestockZone) {
+            System.out.println("Feeding program for " + zoneCode + ": " + livestockZone.getFeedingProgram());
+            return;
         }
-        System.out.println("Feeding program for " + zoneCode + ": " + livestockZone.getFeedingProgram());
+
+        if (zone instanceof AquacultureZone aquacultureZone) {
+            System.out.println("Feeding program for " + zoneCode + ": " + aquacultureZone.getFeedingProgram());
+            return;
+        }
+
+        throw new IllegalArgumentException("Zone is not an animal zone.");
     }
+
 
     public void addSensor(Sensor sensor) {
         if (sensor == null) {
