@@ -38,6 +38,7 @@ public abstract class Animal {
     public List<HealthEvent> getHealthEvents() { return healthEvents; }
 
     public void addSensor(Sensor sensor) {
+        sensor.setOwnerAnimal(this);
         sensors.add(sensor);
     }
 

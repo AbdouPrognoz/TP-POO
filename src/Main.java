@@ -71,7 +71,7 @@ public class Main {
         // 4. Sensors & Alerts (Requirements: sensors on entities, boundary alerts)
 
         System.out.println("\n--- 4. ALERTS & SENSORS ---");
-        GpsSensor gps = new GpsSensor("GPS-A1", null);
+        GpsSensor gps = new GpsSensor("GPS-A1", livestockZone);
         cow.addSensor(gps);
         
         // Test Boundary (Center 0,0 Rad 10)
@@ -85,5 +85,14 @@ public class Main {
         for(Alert a : farm.getAlertsHistory()) {
             System.out.println("- " + a.getMessage() + " [" + a.getSeverity() + "]");
         }
+
+        System.out.println("Active alerts sorted:");
+        for (Alert a : farm.getActiveAlertsSorted()) {
+          System.out.println("- " + a.getMessage() + " [" + a.getSeverity() + "] zone=" + a.getZoneCode() + " type=" + a.getSensorType());
+        }
+
+        System.out.println("Alerts in zone LZ1: " + farm.filterAlertsByZone("LZ1").size());
+        System.out.println("Alerts from GpsSensor: " + farm.filterAlertsBySensorType("GpsSensor").size());
+        System.out.println("Critical alerts: " + farm.filterAlertsByLevel(Severity.CRITICAL).size());
     }
 }

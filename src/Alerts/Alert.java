@@ -5,6 +5,8 @@ public class Alert {
     private final String timestamp;
     private final String sensorId;
     private final String readingId;
+    private final String zoneCode;
+    private final String sensorType;
     private final Severity severity;
     private AlertStatus status;
     private final String message;
@@ -13,6 +15,8 @@ public class Alert {
                  String timestamp,
                  String sensorId,
                  String readingId,
+                 String zoneCode,
+                 String sensorType,
                  Severity severity,
                  AlertStatus status,
                  String message) {
@@ -20,9 +24,21 @@ public class Alert {
         this.timestamp = timestamp;
         this.sensorId = sensorId;
         this.readingId = readingId;
+        this.zoneCode = zoneCode;
+        this.sensorType = sensorType;
         this.severity = severity;
         this.status = status;
         this.message = message;
+    }
+
+    public Alert(String id,
+                 String timestamp,
+                 String sensorId,
+                 String readingId,
+                 Severity severity,
+                 AlertStatus status,
+                 String message) {
+        this(id, timestamp, sensorId, readingId, null, null, severity, status, message);
     }
 
     public String getId() {
@@ -39,6 +55,14 @@ public class Alert {
 
     public String getReadingId() {
         return readingId;
+    }
+
+    public String getZoneCode() {
+        return zoneCode;
+    }
+
+    public String getSensorType() {
+        return sensorType;
     }
 
     public Severity getSeverity() {

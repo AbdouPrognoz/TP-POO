@@ -3,6 +3,7 @@ package Sensors;
 import Readings.Coordinates;
 import Readings.Reading;
 import Readings.ReadingLevel;
+import Zone.LivestockZone;
 import Zone.Zone;
 
 public class GpsSensor extends Sensor {
@@ -21,6 +22,9 @@ public class GpsSensor extends Sensor {
     }
 
     public boolean isOutsideZone(double latitude, double longitude) {
-        return false;
+        if (!(getZone() instanceof LivestockZone livestockZone)) {
+            return false;
+        }
+        return livestockZone.isOutside(new Coordinates(latitude, longitude));
     }
 }

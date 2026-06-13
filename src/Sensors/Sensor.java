@@ -1,5 +1,6 @@
 package Sensors;
 
+import Animals.Animal;
 import Readings.Reading;
 import Readings.ReadingLevel;
 import Zone.Zone;
@@ -16,6 +17,7 @@ public abstract class Sensor {
     private final double minThreshold;
     private final double maxThreshold;
     private final Zone zone;
+    private Animal ownerAnimal;
     private final List<Reading> history;
 
     protected Sensor(String id, Zone zone, double minThreshold, double maxThreshold) {
@@ -33,6 +35,14 @@ public abstract class Sensor {
 
     public Zone getZone() {
         return zone;
+    }
+
+    public Animal getOwnerAnimal() {
+        return ownerAnimal;
+    }
+
+    public void setOwnerAnimal(Animal ownerAnimal) {
+        this.ownerAnimal = ownerAnimal;
     }
 
     public SensorStatus getStatus() {

@@ -15,7 +15,8 @@ public class AlertRepository {
     public List<Alert> getActiveSorted() {
         return alerts.stream()
                 .filter(a -> a.getStatus() == AlertStatus.ACTIVE)
-                .sorted(Comparator.comparing(Alert::getTimestamp))
+            .sorted(Comparator.comparing(Alert::getSeverity).reversed()
+                .thenComparing(Alert::getTimestamp))
                 .collect(Collectors.toList());
     }
 
@@ -38,6 +39,22 @@ public class AlertRepository {
     public List<Alert> filterBySeverity(Severity severity) {
         return alerts.stream()
                 .filter(a -> a.getSeverity() == severity)
+                .collect(Collectors.toList());
+    }
+
+    public List<Alert> filterByLevel(Severity severity) {
+        return filterBySeverity(severity);
+    }
+
+    public List<Alert> filterByZone(String zoneCode) {
+        return alerts.stream()
+                .filter(a -> zoneCode != null && zoneCode.equals(a.getZoneCode()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Alert> filterBySensorType(String sensorType) {
+        return alerts.stream()
+                .filter(a -> sensorType != null && sensorType.equals(a.getSensorType()))
                 .collect(Collectors.toList());
     }
 

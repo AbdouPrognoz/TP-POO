@@ -19,6 +19,14 @@ public class FarmSystem {
     private final Map<String, Zone> zones = new HashMap<>();
     private final AlertRepository alertRepository = new AlertRepository();
 
+    public List<Zone> getZonesView() {
+        return new ArrayList<>(zones.values());
+    }
+
+    public Zone getZoneView(String code) {
+        return getZone(code);
+    }
+
     private Zone getZone(String code) {
         Zone zone = zones.get(code);
         if (zone == null) {
@@ -291,6 +299,31 @@ public class FarmSystem {
                 System.out.println("Sensor found ");
                 return sensor;
             }
+            if (zone instanceof LivestockZone livestockZone) {
+                Sensor animalSensor = findSensorAmongAnimals(livestockZone.getAnimals(), sensorId);
+                if (animalSensor != null) {
+                    System.out.println("Sensor found ");
+                    return animalSensor;
+                }
+            }
+            if (zone instanceof AquacultureZone aquacultureZone) {
+                Sensor animalSensor = findSensorAmongAnimals(aquacultureZone.getSpecies(), sensorId);
+                if (animalSensor != null) {
+                    System.out.println("Sensor found ");
+                    return animalSensor;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Sensor findSensorAmongAnimals(List<? extends Animal> animals, String sensorId) {
+        for (Animal animal : animals) {
+            for (Sensor sensor : animal.getSensors()) {
+                if (sensor.getId().equals(sensorId)) {
+                    return sensor;
+                }
+            }
         }
         return null;
     }
@@ -316,7 +349,7 @@ public class FarmSystem {
 
         Reading reading = numericSensor.recordReading(readingId, timestamp, value);
         if (reading != null) {
-            Alert alert = createAlertIfNeeded(reading);
+            Alert alert = createAlertIfNeeded(sensor, reading);
             if (alert != null) {
                 alertRepository.add(alert);
             }
@@ -331,29 +364,51 @@ public class FarmSystem {
         }
 
         Reading reading = gpsSensor.recordReading(readingId, timestamp, latitude, longitude);
-        
-        // Find animal associated with the sensor
-        for (Zone zone : zones.values()) {
-            if (zone instanceof LivestockZone lz) {
-                for (Land a : lz.getAnimals()) {
-                    boolean found = false;
-                    for (Sensor s : a.getSensors()) {
-                        if (s.getId().equals(sensor.getId())) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found) {
-                        if (lz.isOutside(new Coordinates(latitude, longitude))) {
-                            System.out.println("Boundary violation detected for animal " + a.getId());
-                            alertRepository.add(new Alert("A-" + readingId, timestamp, sensorId, readingId, Severity.CRITICAL, AlertStatus.ACTIVE, "Animal " + a.getId() + " is out of bounds"));
-                        }
-                        return reading; // Found and checked, no need to continue
-                    }
-                }
-            }
+
+        Animal owner = sensor.getOwnerAnimal();
+        if (owner != null && gpsSensor.isOutsideZone(latitude, longitude)) {
+            System.out.println("Boundary violation detected for animal " + owner.getId());
+            alertRepository.add(new Alert(
+                    "A-" + readingId,
+                    timestamp,
+                    sensorId,
+                    readingId,
+                    sensor.getZone() != null ? sensor.getZone().getCode() : null,
+                    sensor.getClass().getSimpleName(),
+                    Severity.CRITICAL,
+                    AlertStatus.ACTIVE,
+                    "Animal " + owner.getId() + " is out of bounds"
+            ));
         }
         return reading;
+    }
+
+    private List<Sensor> getSensorsForZone(Zone zone) {
+        List<Sensor> sensors = new ArrayList<>(zone.getSensors());
+        if (zone instanceof LivestockZone livestockZone) {
+            for (Land animal : livestockZone.getAnimals()) {
+                sensors.addAll(animal.getSensors());
+            }
+        } else if (zone instanceof AquacultureZone aquacultureZone) {
+            for (Aqua animal : aquacultureZone.getSpecies()) {
+                sensors.addAll(animal.getSensors());
+            }
+        }
+
+        List<Sensor> uniqueSensors = new ArrayList<>();
+        for (Sensor sensor : sensors) {
+            boolean alreadyIncluded = false;
+            for (Sensor existing : uniqueSensors) {
+                if (existing.getId().equals(sensor.getId())) {
+                    alreadyIncluded = true;
+                    break;
+                }
+            }
+            if (!alreadyIncluded) {
+                uniqueSensors.add(sensor);
+            }
+        }
+        return uniqueSensors;
     }
 
     public List<Reading> getReadingsBySensor(String sensorId) {
@@ -367,7 +422,7 @@ public class FarmSystem {
     public List<Reading> getReadingsByZone(String zoneCode) {
         List<Reading> result = new ArrayList<>();
         Zone zone = getZone(zoneCode);
-        for (Sensor sensor : zone.getSensors()) {
+        for (Sensor sensor : getSensorsForZone(zone)) {
             result.addAll(sensor.getHistory());
         }
         return result;
@@ -376,7 +431,7 @@ public class FarmSystem {
     public List<Reading> getReadingsByZoneAndPeriod(String zoneCode, String startTimestamp, String endTimestamp) {
         List<Reading> result = new ArrayList<>();
         Zone zone = getZone(zoneCode);
-        for (Sensor sensor : zone.getSensors()) {
+        for (Sensor sensor : getSensorsForZone(zone)) {
             result.addAll(sensor.getHistoryBetween(startTimestamp, endTimestamp));
         }
         return result;
@@ -402,6 +457,18 @@ public class FarmSystem {
         return alertRepository.filterBySeverity(severity);
     }
 
+    public List<Alert> filterAlertsByLevel(Severity severity) {
+        return alertRepository.filterByLevel(severity);
+    }
+
+    public List<Alert> filterAlertsByZone(String zoneCode) {
+        return alertRepository.filterByZone(zoneCode);
+    }
+
+    public List<Alert> filterAlertsBySensorType(String sensorType) {
+        return alertRepository.filterBySensorType(sensorType);
+    }
+
     public List<Alert> filterAlertsBySensor(String sensorId) {
         return alertRepository.filterBySensor(sensorId);
     }
@@ -410,17 +477,21 @@ public class FarmSystem {
         return alertRepository.filterByPeriod(startTimestamp, endTimestamp);
     }
 
-    private Alert createAlertIfNeeded(Reading reading) {
+    private Alert createAlertIfNeeded(Sensor sensor, Reading reading) {
         if (reading.getLevel() == ReadingLevel.NORMAL) {
             return null;
         }
 
         Severity severity = reading.getLevel() == ReadingLevel.CRITICAL ? Severity.CRITICAL : Severity.WARNING;
+        String zoneCode = sensor.getZone() != null ? sensor.getZone().getCode() : null;
+        String sensorType = sensor.getClass().getSimpleName();
         return new Alert(
                 "A-" + reading.getId(),
                 reading.getTimestamp(),
                 reading.getSensorId(),
                 reading.getId(),
+                zoneCode,
+                sensorType,
                 severity,
                 AlertStatus.ACTIVE,
                 "Reading out of range"
