@@ -1,8 +1,10 @@
 package Crops;
 
 import java.time.LocalDate;
+import java.io.Serializable;
 
-public abstract class Crops {
+public abstract class Crops implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String id;
     private LocalDate plantingDate;

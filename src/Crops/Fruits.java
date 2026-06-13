@@ -1,8 +1,10 @@
 package Crops;
 
 import java.time.LocalDate;
+import java.io.Serializable;
 
-public class Fruits extends Crops {
+public class Fruits extends Crops implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private F fruitType;
 

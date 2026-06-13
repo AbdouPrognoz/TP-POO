@@ -4,8 +4,10 @@ import Animals.Land;
 import Readings.Coordinates;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.Serializable;
 
-public class LivestockZone extends Zone {
+public class LivestockZone extends Zone implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private List<Land> animals = new ArrayList<>();
     private FeedingProgram feedingProgram;

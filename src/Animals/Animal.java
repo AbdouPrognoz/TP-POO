@@ -4,8 +4,10 @@ import Sensors.Sensor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.io.Serializable;
 
-public abstract class Animal {
+public abstract class Animal implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String id;
     private String species;

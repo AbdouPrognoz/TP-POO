@@ -1,6 +1,8 @@
 package Readings;
+import java.io.Serializable;
 
-public class Reading {
+public class Reading implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String id;
     private final String timestamp;
     private final String sensorId;

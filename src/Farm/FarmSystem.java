@@ -19,6 +19,24 @@ public class FarmSystem {
     private final Map<String, Zone> zones = new HashMap<>();
     private final AlertRepository alertRepository = new AlertRepository();
 
+    public Map<String, Zone> getZonesMap() {
+        return zones;
+    }
+
+    public void loadZones(Map<String, Zone> loadedZones) {
+        zones.clear();
+        zones.putAll(loadedZones);
+    }
+
+    public List<Alert> getAlertsList() {
+        // Expose the raw list for serialization
+        return alertRepository.getHistory(); 
+    }
+    
+    public void loadAlerts(List<Alert> loadedAlerts) {
+        alertRepository.loadAlerts(loadedAlerts);
+    }
+
     public List<Zone> getZonesView() {
         return new ArrayList<>(zones.values());
     }

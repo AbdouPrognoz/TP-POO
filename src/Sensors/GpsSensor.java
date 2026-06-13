@@ -5,8 +5,10 @@ import Readings.Reading;
 import Readings.ReadingLevel;
 import Zone.LivestockZone;
 import Zone.Zone;
+import java.io.Serializable;
 
-public class GpsSensor extends Sensor {
+public class GpsSensor extends Sensor implements Serializable {
+    private static final long serialVersionUID = 1L;
     public GpsSensor(String id, Zone zone) {
         super(id, zone, 0.0, 0.0);
     }

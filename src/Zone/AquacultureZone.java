@@ -3,8 +3,10 @@ package Zone;
 import Animals.Aqua;
 import java.util.ArrayList;
 import java.util.List;
+import java.io.Serializable;
 
-public class AquacultureZone extends Zone {
+public class AquacultureZone extends Zone implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private List<Aqua> species = new ArrayList<>();
     private FeedingProgram feedingProgram;

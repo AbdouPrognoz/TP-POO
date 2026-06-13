@@ -1,6 +1,8 @@
 package Animals;
+import java.io.Serializable;
 
-public class Aqua extends Animal {
+public class Aqua extends Animal implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private AquaSpecies species;
 

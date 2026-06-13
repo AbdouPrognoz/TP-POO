@@ -1,6 +1,8 @@
 package Alerts;
+import java.io.Serializable;
 
-public class Alert {
+public class Alert implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String id;
     private final String timestamp;
     private final String sensorId;

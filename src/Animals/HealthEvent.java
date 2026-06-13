@@ -1,8 +1,10 @@
 package Animals;
 
 import java.time.LocalDate;
+import java.io.Serializable;
 
-public class HealthEvent {
+public class HealthEvent implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private LocalDate date;
     private HealthEventType type;

@@ -1,8 +1,10 @@
 package Zone;
 
 import java.time.LocalDate;
+import java.io.Serializable;
 
-public class AquaProductionRecord extends ProductionRecord {
+public class AquaProductionRecord extends ProductionRecord implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String species;
     private double harvestWeight;
 

@@ -7,9 +7,11 @@ import ui.model.FarmDataStore;
 import ui.view.MainView;
 
 public class SmartFarmApp extends Application {
+    private FarmDataStore store;
+
     @Override
     public void start(Stage stage) {
-        FarmDataStore store = new FarmDataStore();
+        store = new FarmDataStore();
         MainView root = new MainView(store);
 
         Scene scene = new Scene(root, 1400, 900);
@@ -20,6 +22,16 @@ public class SmartFarmApp extends Application {
         stage.setTitle("Smart Farming Dashboard");
         stage.setScene(scene);
         stage.show();
+    }
+    @Override
+    public void stop() throws Exception {
+        if (store != null) {
+            Persistence.PersistenceService.saveState(
+                store.getFarmSystem().getZonesMap(),
+                store.getFarmSystem().getAlertsList()
+            );
+        }
+        super.stop();
     }
 
     public static void main(String[] args) {

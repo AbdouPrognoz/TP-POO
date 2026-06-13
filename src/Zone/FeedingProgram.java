@@ -1,6 +1,8 @@
 package Zone;
+import java.io.Serializable;
 
-public class FeedingProgram {
+public class FeedingProgram implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String feedType;
     private double quantityPerMeal;
 

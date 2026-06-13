@@ -3,8 +3,10 @@ package Sensors;
 import Readings.Reading;
 import Readings.ReadingLevel;
 import Zone.Zone;
+import java.io.Serializable;
 
-public abstract class NumericSensor extends Sensor {
+public abstract class NumericSensor extends Sensor implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String unit;
 
     protected NumericSensor(String id, Zone zone, double minThreshold, double maxThreshold, String unit) {

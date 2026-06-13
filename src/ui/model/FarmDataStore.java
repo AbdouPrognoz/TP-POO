@@ -56,7 +56,19 @@ public class FarmDataStore {
     private final FarmSystem farmSystem = new FarmSystem();
 
     public FarmDataStore() {
-        initializeSampleData();
+        Map<String, Zone> loadedZones = Persistence.PersistenceService.loadZones();
+        List<Alert> loadedAlerts = Persistence.PersistenceService.loadAlerts();
+        
+        farmSystem.loadZones(loadedZones);
+        farmSystem.loadAlerts(loadedAlerts);
+
+        // If it's the first time running and no data exists, load some mock data
+        if (loadedZones.isEmpty()) {
+            System.out.println("No persisted data found. Initializing sample data...");
+            initializeSampleDataIfEmpty();
+        } else {
+            System.out.println("Loaded " + loadedZones.size() + " zones from persistence.");
+        }
     }
 
     public FarmSystem getFarmSystem() {
@@ -287,7 +299,7 @@ public class FarmDataStore {
         return null;
     }
 
-    private void initializeSampleData() {
+    private void initializeSampleDataIfEmpty() {
         CropZone cropZone = new CropZone("CZ1", "Crop Zone 1", "CROP");
         AquacultureZone aquaZone = new AquacultureZone("AZ1", "Aqua Zone 1", "AQUACULTURE");
         LivestockZone livestockZone = new LivestockZone("LZ1", "Livestock Zone 1", "LIVESTOCK");
@@ -315,39 +327,32 @@ public class FarmDataStore {
         farmSystem.addSensor(new EnvironmentalSensor("ENV1", cropZone, 10.0, 30.0, "C", EnvironmentalMetric.TEMPERATURE));
         farmSystem.addSensor(new SoilSensor("SOIL1", cropZone, 6.0, 7.5, "%", SoilMetric.HUMIDITY));
 
-        // Generate mock readings for ENV1 (Temperature 10-30)
         for (int i = 0; i < 10; i++) {
             LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
-            double val = 18.0 + Math.sin(i) * 15.0; // 3 to 33
+            double val = 18.0 + Math.sin(i) * 15.0; 
             farmSystem.addNumericReading("ENV1", "R-ENV-" + i, dt.toString(), val);
         }
 
-        // Generate mock readings for SOIL1 (Humidity 6-7.5)
         for (int i = 0; i < 10; i++) {
             LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
-            double val = 6.8 + Math.cos(i) * 1.0; // 5.8 to 7.8
+            double val = 6.8 + Math.cos(i) * 1.0; 
             farmSystem.addNumericReading("SOIL1", "R-SOIL-" + i, dt.toString(), val);
         }
 
-        // Generate mock readings for WAT1 (Dissolved Oxygen 5-9)
         for (int i = 0; i < 8; i++) {
             LocalDateTime dt = LocalDateTime.now().minusDays(8 - i).plusHours(i);
-            double val = 7.0 + Math.sin(i) * 2.5; // 4.5 to 9.5
+            double val = 7.0 + Math.sin(i) * 2.5; 
             farmSystem.addNumericReading("WAT1", "R-WAT-" + i, dt.toString(), val);
         }
 
-        // Generate mock readings for BIO-A1 (Temperature 35-40)
         for (int i = 0; i < 10; i++) {
             LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
-            double val = 37.5 + Math.cos(i) * 3.5; // 34.0 to 41.0
+            double val = 37.5 + Math.cos(i) * 3.5; 
             farmSystem.addNumericReading("BIO-A1", "R-BIO-" + i, dt.toString(), val);
         }
 
-        // Generate mock readings for GPS-A1 (Walking from center to outside the zone)
-        // Zone center is (0,0), radius is 10.0
         for (int i = 0; i < 15; i++) {
             LocalDateTime dt = LocalDateTime.now().minusHours(15 - i);
-            // Start near center (2,2) and walk out towards (13,13)
             double x = 2.0 + (i * 0.8);
             double y = 2.0 + (i * 0.8);
             farmSystem.addGpsReading("GPS-A1", "R-GPS-" + i, dt.toString(), x, y);

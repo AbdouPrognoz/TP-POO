@@ -1,6 +1,8 @@
 package Animals;
+import java.io.Serializable;
 
-public class Land extends Animal {
+public class Land extends Animal implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private Poultry poultrySpecies;
     private Ruminant ruminantSpecies;

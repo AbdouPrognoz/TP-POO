@@ -9,8 +9,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.time.LocalDate;
+import java.io.Serializable;
 
-public abstract class Zone {
+public abstract class Zone implements Serializable {
+    private static final long serialVersionUID = 1L;
 
     private String code;
     private String name;

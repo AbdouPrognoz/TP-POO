@@ -1,8 +1,10 @@
 package Zone;
 
 import java.time.LocalDate;
+import java.io.Serializable;
 
-public class LivestockProductionRecord extends ProductionRecord {
+public class LivestockProductionRecord extends ProductionRecord implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String animalId;
     private double weight;
 

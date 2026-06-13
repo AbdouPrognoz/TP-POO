@@ -10,8 +10,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.io.Serializable;
 
-public abstract class Sensor {
+public abstract class Sensor implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final String id;
     private SensorStatus status;
     private double minThreshold;

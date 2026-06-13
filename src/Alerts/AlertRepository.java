@@ -12,6 +12,11 @@ public class AlertRepository {
         alerts.add(alert);
     }
 
+    public void loadAlerts(List<Alert> loadedAlerts) {
+        alerts.clear();
+        alerts.addAll(loadedAlerts);
+    }
+
     public List<Alert> getActiveSorted() {
         return alerts.stream()
                 .filter(a -> a.getStatus() == AlertStatus.ACTIVE || a.getStatus() == AlertStatus.ACKNOLEGED)
