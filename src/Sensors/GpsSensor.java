@@ -16,7 +16,8 @@ public class GpsSensor extends Sensor {
             return null;
         }
         Coordinates coords = new Coordinates(latitude, longitude);
-        Reading reading = new Reading(readingId, timestamp, getId(), null, null, coords, ReadingLevel.NORMAL);
+        ReadingLevel level = isOutsideZone(latitude, longitude) ? ReadingLevel.CRITICAL : ReadingLevel.NORMAL;
+        Reading reading = new Reading(readingId, timestamp, getId(), null, null, coords, level);
         addToHistory(reading);
         return reading;
     }

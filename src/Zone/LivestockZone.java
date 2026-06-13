@@ -21,6 +21,9 @@ public class LivestockZone extends Zone {
         this.radius = radius;
     }
 
+    public Coordinates getCenter() { return center; }
+    public double getRadius() { return radius; }
+
     public boolean isOutside(Coordinates location) {
         if (center == null) return false;
         double distance = Math.sqrt(Math.pow(location.getLatitude() - center.getLatitude(), 2) +

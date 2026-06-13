@@ -383,7 +383,7 @@ public class FarmSystem {
         return reading;
     }
 
-    private List<Sensor> getSensorsForZone(Zone zone) {
+    public List<Sensor> getSensorsForZone(Zone zone) {
         List<Sensor> sensors = new ArrayList<>(zone.getSensors());
         if (zone instanceof LivestockZone livestockZone) {
             for (Land animal : livestockZone.getAnimals()) {

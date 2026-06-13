@@ -181,6 +181,17 @@ public class FarmDataStore {
         farmSystem.logWeightChange(zoneCode, animalId, newWeight);
     }
 
+    public void updateHealthStatus(String zoneCode, String animalId, HealthStatus newStatus) {
+        Animal animal = findAnimal(zoneCode, animalId);
+        if (animal != null) {
+            HealthStatus old = animal.getHealthStatus();
+            animal.setHealthStatus(newStatus);
+            animal.addHealthEvent(new HealthEvent(LocalDate.now(),
+                    HealthEventType.HEALTH_STATUS_CHANGE,
+                    "État de santé : " + old.name() + " → " + newStatus.name()));
+        }
+    }
+
     public void registerHealthEvent(String zoneCode, String animalId, HealthEventType type, String notes) {
         Animal animal = findAnimal(zoneCode, animalId);
         if (animal != null) {
@@ -194,6 +205,16 @@ public class FarmDataStore {
 
     public void addDemoGpsReading() {
         farmSystem.addGpsReading("GPS-A1", "R-Demo", LocalDateTime.now().toString(), 20.0, 20.0);
+    }
+
+    public void addManualNumericReading(String sensorId, double value) {
+        String readingId = "R-" + System.currentTimeMillis() % 100000;
+        farmSystem.addNumericReading(sensorId, readingId, LocalDateTime.now().toString(), value);
+    }
+
+    public void addManualGpsReading(String sensorId, double lat, double lon) {
+        String readingId = "R-" + System.currentTimeMillis() % 100000;
+        farmSystem.addGpsReading(sensorId, readingId, LocalDateTime.now().toString(), lat, lon);
     }
 
     public void addDemoNumericReading() {
@@ -214,6 +235,14 @@ public class FarmDataStore {
 
     public void addSensorToFarm(Sensor sensor) {
         farmSystem.addSensor(sensor);
+    }
+
+    public void updateSensorThresholds(String sensorId, double min, double max) {
+        Sensor sensor = farmSystem.findSensorById(sensorId);
+        if (sensor != null) {
+            sensor.setMinThreshold(min);
+            sensor.setMaxThreshold(max);
+        }
     }
 
     public List<Reading> getReadingsForZone(String zoneCode) {
@@ -275,7 +304,7 @@ public class FarmDataStore {
         Land cow = new Land("A1", Ruminant.COW, 5, 250.0, HealthStatus.HEALTHY);
         farmSystem.assignAnimalToZone("LZ1", cow);
         cow.addSensor(new GpsSensor("GPS-A1", livestockZone));
-        cow.addSensor(new BiometricSensor("BIO-A1", livestockZone, 35.0, 40.0, "C", BiometricMetric.BODY_TEMPERATURE));
+        cow.addSensor(new BiometricSensor("BIO-A1", livestockZone, 35.0, 40.0, "C"));
         farmSystem.recordProduction("LZ1", new LivestockProductionRecord(LocalDate.now().minusDays(2), "A1", 260.0));
 
         Aqua fish = new Aqua("AQ1", AquaSpecies.FISH, 1, 0.5, HealthStatus.HEALTHY);
@@ -286,7 +315,42 @@ public class FarmDataStore {
         farmSystem.addSensor(new EnvironmentalSensor("ENV1", cropZone, 10.0, 30.0, "C", EnvironmentalMetric.TEMPERATURE));
         farmSystem.addSensor(new SoilSensor("SOIL1", cropZone, 6.0, 7.5, "%", SoilMetric.HUMIDITY));
 
-        farmSystem.addNumericReading("ENV1", "R2", LocalDateTime.now().minusHours(2).toString(), 5.0);
-        farmSystem.addGpsReading("GPS-A1", "R1", LocalDateTime.now().minusHours(1).toString(), 20.0, 20.0);
+        // Generate mock readings for ENV1 (Temperature 10-30)
+        for (int i = 0; i < 10; i++) {
+            LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
+            double val = 18.0 + Math.sin(i) * 15.0; // 3 to 33
+            farmSystem.addNumericReading("ENV1", "R-ENV-" + i, dt.toString(), val);
+        }
+
+        // Generate mock readings for SOIL1 (Humidity 6-7.5)
+        for (int i = 0; i < 10; i++) {
+            LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
+            double val = 6.8 + Math.cos(i) * 1.0; // 5.8 to 7.8
+            farmSystem.addNumericReading("SOIL1", "R-SOIL-" + i, dt.toString(), val);
+        }
+
+        // Generate mock readings for WAT1 (Dissolved Oxygen 5-9)
+        for (int i = 0; i < 8; i++) {
+            LocalDateTime dt = LocalDateTime.now().minusDays(8 - i).plusHours(i);
+            double val = 7.0 + Math.sin(i) * 2.5; // 4.5 to 9.5
+            farmSystem.addNumericReading("WAT1", "R-WAT-" + i, dt.toString(), val);
+        }
+
+        // Generate mock readings for BIO-A1 (Temperature 35-40)
+        for (int i = 0; i < 10; i++) {
+            LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
+            double val = 37.5 + Math.cos(i) * 3.5; // 34.0 to 41.0
+            farmSystem.addNumericReading("BIO-A1", "R-BIO-" + i, dt.toString(), val);
+        }
+
+        // Generate mock readings for GPS-A1 (Walking from center to outside the zone)
+        // Zone center is (0,0), radius is 10.0
+        for (int i = 0; i < 15; i++) {
+            LocalDateTime dt = LocalDateTime.now().minusHours(15 - i);
+            // Start near center (2,2) and walk out towards (13,13)
+            double x = 2.0 + (i * 0.8);
+            double y = 2.0 + (i * 0.8);
+            farmSystem.addGpsReading("GPS-A1", "R-GPS-" + i, dt.toString(), x, y);
+        }
     }
 }

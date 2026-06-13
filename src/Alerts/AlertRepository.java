@@ -14,7 +14,7 @@ public class AlertRepository {
 
     public List<Alert> getActiveSorted() {
         return alerts.stream()
-                .filter(a -> a.getStatus() == AlertStatus.ACTIVE)
+                .filter(a -> a.getStatus() == AlertStatus.ACTIVE || a.getStatus() == AlertStatus.ACKNOLEGED)
             .sorted(Comparator.comparing(Alert::getSeverity).reversed()
                 .thenComparing(Alert::getTimestamp))
                 .collect(Collectors.toList());
@@ -29,7 +29,11 @@ public class AlertRepository {
     }
 
     public void delete(String alertId) {
-        alerts.removeIf(a -> a.getId().equals(alertId));
+        for (Alert alert : alerts) {
+            if (alert.getId().equals(alertId)) {
+                alert.delete();
+            }
+        }
     }
 
     public List<Alert> getHistory() {

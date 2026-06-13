@@ -14,8 +14,8 @@ import java.util.List;
 public abstract class Sensor {
     private final String id;
     private SensorStatus status;
-    private final double minThreshold;
-    private final double maxThreshold;
+    private double minThreshold;
+    private double maxThreshold;
     private final Zone zone;
     private Animal ownerAnimal;
     private final List<Reading> history;
@@ -61,8 +61,16 @@ public abstract class Sensor {
         return minThreshold;
     }
 
+    public void setMinThreshold(double minThreshold) {
+        this.minThreshold = minThreshold;
+    }
+
     public double getMaxThreshold() {
         return maxThreshold;
+    }
+
+    public void setMaxThreshold(double maxThreshold) {
+        this.maxThreshold = maxThreshold;
     }
 
     public ReadingLevel computeLevel(double value) {

@@ -116,4 +116,9 @@ public abstract class Zone {
     }
 
     public abstract int getHostedCount();
+
+    @Override
+    public String toString() {
+        return code + " – " + name + " (" + type + ")";
+    }
 }

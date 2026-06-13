@@ -1,14 +1,7 @@
-# Build outputs
-out/
 target/
-*.class
-
-# IntelliJ IDEA
 .idea/
 *.iml
-*.ipr
-*.iws
-
-# OS files
+.vscode/
+*.class
 .DS_Store
-Thumbs.db
+*.log
