@@ -1,3 +1,6 @@
+
+This is an OOP school project 
+
 # TP-OOP Smart Farming
 
 Smart Farming is a Java 17 object-oriented project developed as a practical assignment for ESI-Alger. It models a farm management system with zones, crops, animals, sensors, readings, alerts, and a JavaFX user interface.
