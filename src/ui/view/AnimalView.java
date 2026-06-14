@@ -310,7 +310,7 @@ public class AnimalView extends BorderPane {
 
     private void showAddAnimalDialog() {
         List<Zone> animalZones = store.getZones().stream()
-                .filter(z -> z instanceof LivestockZone || z instanceof AquacultureZone)
+                .filter(z -> (z instanceof LivestockZone || z instanceof AquacultureZone) && z.getStatus() == StatusZone.ACTIVE)
                 .collect(Collectors.toList());
 
         if (animalZones.isEmpty()) {

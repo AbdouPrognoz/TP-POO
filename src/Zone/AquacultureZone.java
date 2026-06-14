@@ -10,6 +10,7 @@ public class AquacultureZone extends Zone implements Serializable {
 
     private List<Aqua> species = new ArrayList<>();
     private FeedingProgram feedingProgram;
+    private final List<FeedingProgram> feedingProgramHistory = new ArrayList<>();
 
     public AquacultureZone(String code, String name, String type) {
         super(code, name, type);
@@ -23,10 +24,17 @@ public class AquacultureZone extends Zone implements Serializable {
 
     public void setFeedingProgram(FeedingProgram program) {
         this.feedingProgram = program;
+        if (program != null) {
+            this.feedingProgramHistory.add(program);
+        }
     }
 
     public FeedingProgram getFeedingProgram() {
         return feedingProgram;
+    }
+
+    public List<FeedingProgram> getFeedingProgramHistory() {
+        return feedingProgramHistory;
     }
 
     @Override

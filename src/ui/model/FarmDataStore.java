@@ -300,62 +300,74 @@ public class FarmDataStore {
     }
 
     private void initializeSampleDataIfEmpty() {
-        CropZone cropZone = new CropZone("CZ1", "Crop Zone 1", "CROP");
-        AquacultureZone aquaZone = new AquacultureZone("AZ1", "Aqua Zone 1", "AQUACULTURE");
-        LivestockZone livestockZone = new LivestockZone("LZ1", "Livestock Zone 1", "LIVESTOCK");
-        livestockZone.setBoundary(new Coordinates(0, 0), 10.0);
+        // --- 1. Crop Zones ---
+        CropZone cropZone1 = new CropZone("CZ1", "Champ de Blé Nord", "CROP");
+        CropZone cropZone2 = new CropZone("CZ2", "Serre Tomates", "CROP");
+        farmSystem.addZone(cropZone1);
+        farmSystem.addZone(cropZone2);
 
-        farmSystem.addZone(cropZone);
-        farmSystem.addZone(aquaZone);
-        farmSystem.addZone(livestockZone);
-
-        Cereals wheat = new Cereals("W1", LocalDate.now().minusDays(12), LocalDate.now().plusMonths(6), GrowthStage.GROWTH, 6.0, 7.5, 40, 70, C.WHEAT);
+        Cereals wheat = new Cereals("W1", LocalDate.now().minusDays(30), LocalDate.now().plusMonths(5), GrowthStage.GROWTH, 6.0, 7.5, 40, 70, C.WHEAT);
+        Vegetables tomato = new Vegetables("T1", LocalDate.now().minusDays(15), LocalDate.now().plusMonths(2), GrowthStage.GERMINATION, 5.5, 6.8, 50, 80, V.TOMATO);
         farmSystem.assignCropToZone("CZ1", wheat);
-        farmSystem.recordProduction("CZ1", new CropProductionRecord(LocalDate.now().minusDays(1), "W1", 1000.0));
+        farmSystem.assignCropToZone("CZ2", tomato);
+        
+        farmSystem.recordProduction("CZ1", new CropProductionRecord(LocalDate.now().minusDays(1), "W1", 1200.0));
+        farmSystem.recordProduction("CZ2", new CropProductionRecord(LocalDate.now().minusDays(5), "T1", 450.0));
 
-        Land cow = new Land("A1", Ruminant.COW, 5, 250.0, HealthStatus.HEALTHY);
-        farmSystem.assignAnimalToZone("LZ1", cow);
-        cow.addSensor(new GpsSensor("GPS-A1", livestockZone));
-        cow.addSensor(new BiometricSensor("BIO-A1", livestockZone, 35.0, 40.0, "C"));
-        farmSystem.recordProduction("LZ1", new LivestockProductionRecord(LocalDate.now().minusDays(2), "A1", 260.0));
+        farmSystem.addSensor(new EnvironmentalSensor("ENV1", cropZone1, 10.0, 30.0, "C", EnvironmentalMetric.TEMPERATURE));
+        farmSystem.addSensor(new SoilSensor("SOIL1", cropZone2, 5.0, 7.0, "%", SoilMetric.HUMIDITY));
+
+        // --- 2. Aquaculture Zones ---
+        AquacultureZone aquaZone1 = new AquacultureZone("AZ1", "Bassin Poissons", "AQUACULTURE");
+        AquacultureZone aquaZone2 = new AquacultureZone("AZ2", "Bassin Crevettes", "AQUACULTURE");
+        farmSystem.addZone(aquaZone1);
+        farmSystem.addZone(aquaZone2);
 
         Aqua fish = new Aqua("AQ1", AquaSpecies.FISH, 1, 0.5, HealthStatus.HEALTHY);
+        Aqua shrimp = new Aqua("AQ2", AquaSpecies.SHRIMP, 1, 0.05, HealthStatus.HEALTHY);
         farmSystem.assignAnimalToZone("AZ1", fish);
-        fish.addSensor(new WaterSensor("WAT1", aquaZone, 5.0, 9.0, "mg/L", WaterMetric.DISSOLVED_OXYGEN));
-        farmSystem.recordProduction("AZ1", new AquaProductionRecord(LocalDate.now().minusDays(3), "FISH", 12.5));
+        farmSystem.assignAnimalToZone("AZ2", shrimp);
+        
+        farmSystem.recordProduction("AZ1", new AquaProductionRecord(LocalDate.now().minusDays(2), "FISH", 15.0));
 
-        farmSystem.addSensor(new EnvironmentalSensor("ENV1", cropZone, 10.0, 30.0, "C", EnvironmentalMetric.TEMPERATURE));
-        farmSystem.addSensor(new SoilSensor("SOIL1", cropZone, 6.0, 7.5, "%", SoilMetric.HUMIDITY));
+        fish.addSensor(new WaterSensor("WAT1", aquaZone1, 5.0, 9.0, "mg/L", WaterMetric.DISSOLVED_OXYGEN));
+        shrimp.addSensor(new WaterSensor("WAT2", aquaZone2, 6.5, 8.5, "pH", WaterMetric.PH));
 
-        for (int i = 0; i < 10; i++) {
-            LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
-            double val = 18.0 + Math.sin(i) * 15.0; 
-            farmSystem.addNumericReading("ENV1", "R-ENV-" + i, dt.toString(), val);
-        }
+        // --- 3. Livestock Zones ---
+        LivestockZone livestockZone1 = new LivestockZone("LZ1", "Pâturage Vaches", "LIVESTOCK");
+        livestockZone1.setBoundary(new Coordinates(36.75, 3.05), 50.0);
+        LivestockZone livestockZone2 = new LivestockZone("LZ2", "Poulailler", "LIVESTOCK");
+        livestockZone2.setBoundary(new Coordinates(36.76, 3.06), 20.0);
+        farmSystem.addZone(livestockZone1);
+        farmSystem.addZone(livestockZone2);
 
-        for (int i = 0; i < 10; i++) {
-            LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
-            double val = 6.8 + Math.cos(i) * 1.0; 
-            farmSystem.addNumericReading("SOIL1", "R-SOIL-" + i, dt.toString(), val);
-        }
+        Land cow = new Land("A1", Ruminant.COW, 5, 250.0, HealthStatus.HEALTHY);
+        Land chicken = new Land("A2", Poultry.CHICKEN, 1, 2.5, HealthStatus.HEALTHY);
+        farmSystem.assignAnimalToZone("LZ1", cow);
+        farmSystem.assignAnimalToZone("LZ2", chicken);
+        
+        farmSystem.recordProduction("LZ1", new LivestockProductionRecord(LocalDate.now().minusDays(3), "A1", 300.0));
+        farmSystem.recordProduction("LZ2", new LivestockProductionRecord(LocalDate.now().minusDays(1), "A2", 50.0)); // e.g. eggs
 
-        for (int i = 0; i < 8; i++) {
-            LocalDateTime dt = LocalDateTime.now().minusDays(8 - i).plusHours(i);
-            double val = 7.0 + Math.sin(i) * 2.5; 
-            farmSystem.addNumericReading("WAT1", "R-WAT-" + i, dt.toString(), val);
-        }
+        cow.addSensor(new GpsSensor("GPS-A1", livestockZone1));
+        cow.addSensor(new BiometricSensor("BIO-A1", livestockZone1, 35.0, 40.0, "C"));
+        chicken.addSensor(new BiometricSensor("BIO-A2", livestockZone2, 38.0, 42.0, "C"));
 
-        for (int i = 0; i < 10; i++) {
-            LocalDateTime dt = LocalDateTime.now().minusDays(10 - i).plusHours(i);
-            double val = 37.5 + Math.cos(i) * 3.5; 
-            farmSystem.addNumericReading("BIO-A1", "R-BIO-" + i, dt.toString(), val);
-        }
-
-        for (int i = 0; i < 15; i++) {
-            LocalDateTime dt = LocalDateTime.now().minusHours(15 - i);
-            double x = 2.0 + (i * 0.8);
-            double y = 2.0 + (i * 0.8);
-            farmSystem.addGpsReading("GPS-A1", "R-GPS-" + i, dt.toString(), x, y);
+        // --- Mock Readings ---
+        for (int i = 0; i < 20; i++) {
+            LocalDateTime dt = LocalDateTime.now().minusDays(20 - i).plusHours(i * 2);
+            // Intentionally large variances to trigger Warning and Critical alerts
+            farmSystem.addNumericReading("ENV1", "R-ENV-" + i, dt.toString(), 15.0 + Math.sin(i) * 20.0);
+            farmSystem.addNumericReading("SOIL1", "R-SOIL-" + i, dt.toString(), 6.0 + Math.cos(i) * 3.0);
+            farmSystem.addNumericReading("WAT1", "R-WAT-" + i, dt.toString(), 7.0 + Math.sin(i) * 4.0);
+            farmSystem.addNumericReading("WAT2", "R-WAT2-" + i, dt.toString(), 7.5 + Math.cos(i) * 2.0);
+            farmSystem.addNumericReading("BIO-A1", "R-BIO-" + i, dt.toString(), 37.5 + Math.cos(i) * 5.0);
+            farmSystem.addNumericReading("BIO-A2", "R-BIO2-" + i, dt.toString(), 40.0 + Math.sin(i) * 4.0);
+            
+            // To trigger GPS alerts (LivestockZone radius is 50)
+            double gpsX = 36.75 + (i * 5.0);
+            double gpsY = 3.05 + (i * 5.0);
+            farmSystem.addGpsReading("GPS-A1", "R-GPS-" + i, dt.toString(), gpsX, gpsY);
         }
     }
 }

@@ -11,6 +11,7 @@ public class LivestockZone extends Zone implements Serializable {
 
     private List<Land> animals = new ArrayList<>();
     private FeedingProgram feedingProgram;
+    private final List<FeedingProgram> feedingProgramHistory = new ArrayList<>();
     private Coordinates center;
     private double radius;
 
@@ -43,10 +44,17 @@ public class LivestockZone extends Zone implements Serializable {
 
     public void setFeedingProgram(FeedingProgram program) {
         this.feedingProgram = program;
+        if (program != null) {
+            this.feedingProgramHistory.add(program);
+        }
     }
 
     public FeedingProgram getFeedingProgram() {
         return feedingProgram;
+    }
+
+    public List<FeedingProgram> getFeedingProgramHistory() {
+        return feedingProgramHistory;
     }
 
     @Override

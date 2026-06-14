@@ -20,7 +20,10 @@ import java.util.List;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
+import java.util.Optional;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
@@ -58,6 +61,7 @@ public class ZoneView extends BorderPane {
         Button reactivate = new Button("Réactiver");
         Button report     = new Button("Rapport des cultures");
         Button feeding    = new Button("Programme d'alimentation");
+        Button production = new Button("Historique de production");
         Button dashboard  = new Button("Tableau de bord (Capteurs)");
         Button chart      = new Button("Évolution (Graphique)");
         Button refresh    = new Button("Actualiser");
@@ -74,12 +78,13 @@ public class ZoneView extends BorderPane {
         });
         report.setOnAction(e -> showCropReport());
         feeding.setOnAction(e -> showFeedingProgramDialog());
+        production.setOnAction(e -> showProductionHistoryDialog());
         dashboard.setOnAction(e -> showZoneReadingsDashboard());
         chart.setOnAction(e -> showZoneEvolutionChart());
         refresh.setOnAction(e -> refresh());
 
         HBox row1 = new HBox(10, add, modify, suspend, reactivate, refresh);
-        HBox row2 = new HBox(10, report, feeding, dashboard, chart);
+        HBox row2 = new HBox(10, report, feeding, production, dashboard, chart);
         row2.setPadding(new Insets(4, 0, 0, 0));
 
         VBox box = new VBox(4, row1, row2);
@@ -91,101 +96,184 @@ public class ZoneView extends BorderPane {
     //  Feeding program dialog
     // ──────────────────────────────────────────────
 
-    private void showFeedingProgramDialog() {
+    private void showProductionHistoryDialog() {
         Zone selected = tableView.getSelectionModel().getSelectedItem();
-
         if (selected == null) {
-            new Alert(Alert.AlertType.WARNING,
-                    "Veuillez sélectionner une zone dans le tableau.").showAndWait();
-            return;
-        }
-        if (!(selected instanceof LivestockZone) && !(selected instanceof AquacultureZone)) {
-            new Alert(Alert.AlertType.WARNING,
-                    "La zone \"" + selected.getCode() + "\" n'est pas une zone animale.\n"
-                    + "Les programmes d'alimentation s'appliquent aux zones d'élevage et aquacoles.")
-                    .showAndWait();
+            new Alert(Alert.AlertType.WARNING, "Veuillez sélectionner une zone.").showAndWait();
             return;
         }
 
-        // Read current program
-        FeedingProgram current = (selected instanceof LivestockZone lz)
-                ? lz.getFeedingProgram()
-                : ((AquacultureZone) selected).getFeedingProgram();
-
-        // ── Build dialog ──
         Dialog<ButtonType> dialog = new Dialog<>();
-        dialog.setTitle("Programme d'alimentation – " + selected.getCode());
-        dialog.setHeaderText("Zone : " + selected.getCode() + " – " + selected.getName()
-                + "  (" + selected.getType() + ")");
-        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.setTitle("Historique de production – " + selected.getCode());
+        dialog.setHeaderText("Production pour : " + selected.getName() + " (" + selected.getType() + ")");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
 
-        GridPane grid = new GridPane();
-        grid.setHgap(14);
-        grid.setVgap(12);
-        grid.setPadding(new Insets(20));
+        TableView<ProductionRecord> historyTable = new TableView<>();
+        ObservableList<ProductionRecord> data = FXCollections.observableArrayList(selected.getProductionHistory());
+        historyTable.setItems(data);
 
-        // Current program summary (read-only)
-        Label currentLabel = new Label("Programme actuel :");
-        currentLabel.setStyle("-fx-font-weight: bold;");
-        String currentText = (current == null)
-                ? "Aucun programme défini"
-                : "Type d'aliment : " + current.getFeedType()
-                  + "   |   Quantité / repas : " + current.getQuantityPerMeal() + " kg";
-        Label currentValue = new Label(currentText);
-        currentValue.setStyle(current == null
-                ? "-fx-text-fill: #c62828;"
-                : "-fx-text-fill: #2e7d32;");
+        TableColumn<ProductionRecord, String> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("date"));
+        dateCol.setPrefWidth(120);
+        
+        TableColumn<ProductionRecord, String> detailsCol = new TableColumn<>("Détails");
+        detailsCol.setCellValueFactory(cellData -> new javafx.beans.property.SimpleStringProperty(cellData.getValue().getDetails()));
+        detailsCol.setPrefWidth(450);
+
+        historyTable.getColumns().addAll(dateCol, detailsCol);
+        historyTable.setPrefHeight(200);
 
         Separator sep = new Separator();
 
-        // Editable fields
-        Label newLabel = new Label("Définir / modifier :");
+        Label newLabel = new Label("Enregistrer une nouvelle production :");
         newLabel.setStyle("-fx-font-weight: bold;");
 
-        Label feedTypeLabel = new Label("Type d'aliment :");
-        TextField feedTypeField = new TextField(current != null ? current.getFeedType() : "");
-        feedTypeField.setPromptText("Ex : Foin, Granulés, Poissons…");
+        HBox formBox = new HBox(10);
+        formBox.setAlignment(Pos.CENTER_LEFT);
+        
+        DatePicker datePicker = new DatePicker(java.time.LocalDate.now());
+        datePicker.setPrefWidth(120);
 
-        Label qtyLabel = new Label("Quantité par repas (kg) :");
-        TextField qtyField = new TextField(current != null
-                ? String.valueOf(current.getQuantityPerMeal()) : "");
-        qtyField.setPromptText("Ex : 5.0");
+        TextField idField = new TextField();
+        idField.setPromptText(selected instanceof LivestockZone ? "ID Animal" : (selected instanceof AquacultureZone ? "Espèce" : "ID Culture"));
+        idField.setPrefWidth(100);
 
-        grid.add(currentLabel, 0, 0); grid.add(currentValue,  1, 0);
-        grid.add(sep,          0, 1, 2, 1);
-        grid.add(newLabel,     0, 2, 2, 1);
-        grid.add(feedTypeLabel,0, 3); grid.add(feedTypeField, 1, 3);
-        grid.add(qtyLabel,     0, 4); grid.add(qtyField,      1, 4);
+        TextField qtyField = new TextField();
+        qtyField.setPromptText(selected instanceof CropZone ? "Rendement" : "Poids (kg)");
+        qtyField.setPrefWidth(100);
 
-        ColumnConstraints col0 = new ColumnConstraints(200);
-        ColumnConstraints col1 = new ColumnConstraints();
-        col1.setHgrow(Priority.ALWAYS);
-        grid.getColumnConstraints().addAll(col0, col1);
-
-        dialog.getDialogPane().setContent(grid);
-        dialog.getDialogPane().setPrefWidth(520);
-
-        dialog.showAndWait().ifPresent(btn -> {
-            if (btn != ButtonType.OK) return;
-            String feedType = feedTypeField.getText().trim();
-            String qtyText  = qtyField.getText().trim();
-
-            if (feedType.isBlank() || qtyText.isBlank()) {
-                new Alert(Alert.AlertType.WARNING,
-                        "Veuillez remplir les deux champs.").showAndWait();
-                return;
-            }
+        Button addBtn = new Button("Enregistrer");
+        addBtn.setOnAction(e -> {
+            if (datePicker.getValue() == null || idField.getText().isBlank() || qtyField.getText().isBlank()) return;
             try {
-                double qty = Double.parseDouble(qtyText);
-                store.getFarmSystem().defineFeedingProgram(selected.getCode(), feedType, qty);
-                new Alert(Alert.AlertType.INFORMATION,
-                        "Programme d'alimentation enregistré :\n"
-                        + "Type : " + feedType + "\n"
-                        + "Quantité / repas : " + qty + " kg").showAndWait();
+                double qty = Double.parseDouble(qtyField.getText().trim());
+                String id = idField.getText().trim();
+                java.time.LocalDate d = datePicker.getValue();
+                
+                ProductionRecord record = null;
+                if (selected instanceof CropZone) {
+                    record = new CropProductionRecord(d, id, qty);
+                } else if (selected instanceof LivestockZone) {
+                    record = new LivestockProductionRecord(d, id, qty);
+                } else if (selected instanceof AquacultureZone) {
+                    record = new AquaProductionRecord(d, id, qty);
+                }
+                
+                if (record != null) {
+                    store.getFarmSystem().recordProduction(selected.getCode(), record);
+                    data.setAll(selected.getProductionHistory());
+                    idField.clear();
+                    qtyField.clear();
+                    refresh();
+                }
             } catch (NumberFormatException ex) {
                 new Alert(Alert.AlertType.ERROR, "Quantité invalide.").showAndWait();
             }
         });
+
+        formBox.getChildren().addAll(datePicker, idField, qtyField, addBtn);
+
+        VBox content = new VBox(15, historyTable, sep, newLabel, formBox);
+        content.setPadding(new Insets(10));
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefWidth(650);
+        dialog.showAndWait();
+    }
+
+    // ──────────────────────────────────────────────
+    //  Feeding program dialog
+    // ──────────────────────────────────────────────
+
+    private void showFeedingProgramDialog() {
+        Zone selected = tableView.getSelectionModel().getSelectedItem();
+        if (selected == null) return;
+
+        if (!(selected instanceof LivestockZone) && !(selected instanceof AquacultureZone)) {
+            new Alert(Alert.AlertType.INFORMATION, "Cette zone n'accepte pas de programme d'alimentation.").showAndWait();
+            return;
+        }
+
+        List<FeedingProgram> history;
+        if (selected instanceof LivestockZone lz) {
+            history = lz.getFeedingProgramHistory();
+        } else {
+            history = ((AquacultureZone) selected).getFeedingProgramHistory();
+        }
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Programme d'alimentation – " + selected.getCode());
+        dialog.setHeaderText("Historique des programmes pour : " + selected.getName());
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CLOSE);
+
+        // TableView for History
+        TableView<FeedingProgram> historyTable = new TableView<>();
+        ObservableList<FeedingProgram> data = FXCollections.observableArrayList(history);
+        historyTable.setItems(data);
+
+        TableColumn<FeedingProgram, String> dateCol = new TableColumn<>("Date");
+        dateCol.setCellValueFactory(new PropertyValueFactory<>("dateDefined"));
+        dateCol.setPrefWidth(120);
+
+        TableColumn<FeedingProgram, String> typeCol = new TableColumn<>("Type d'aliment");
+        typeCol.setCellValueFactory(new PropertyValueFactory<>("feedType"));
+        typeCol.setPrefWidth(200);
+
+        TableColumn<FeedingProgram, Double> qtyCol = new TableColumn<>("Quantité (kg)");
+        qtyCol.setCellValueFactory(new PropertyValueFactory<>("quantityPerMeal"));
+        qtyCol.setPrefWidth(120);
+
+        historyTable.getColumns().addAll(dateCol, typeCol, qtyCol);
+        historyTable.setPrefHeight(200);
+
+        Separator sep = new Separator();
+
+        // Form to add a new program
+        Label newLabel = new Label("Nouveau programme :");
+        newLabel.setStyle("-fx-font-weight: bold;");
+
+        HBox formBox = new HBox(10);
+        formBox.setAlignment(Pos.CENTER_LEFT);
+        
+        TextField feedTypeField = new TextField();
+        feedTypeField.setPromptText("Type d'aliment");
+        
+        TextField qtyField = new TextField();
+        qtyField.setPromptText("Quantité (kg)");
+        qtyField.setPrefWidth(100);
+
+        Button addBtn = new Button("Ajouter");
+        addBtn.setOnAction(e -> {
+            String feedType = feedTypeField.getText().trim();
+            String qtyText = qtyField.getText().trim();
+            if (feedType.isBlank() || qtyText.isBlank()) return;
+            try {
+                double qty = Double.parseDouble(qtyText);
+                store.getFarmSystem().defineFeedingProgram(selected.getCode(), feedType, qty);
+                
+                // update table
+                if (selected instanceof LivestockZone lz) {
+                    data.setAll(lz.getFeedingProgramHistory());
+                } else {
+                    data.setAll(((AquacultureZone) selected).getFeedingProgramHistory());
+                }
+                
+                feedTypeField.clear();
+                qtyField.clear();
+                refresh();
+            } catch (NumberFormatException ex) {
+                new Alert(Alert.AlertType.ERROR, "Quantité invalide.").showAndWait();
+            }
+        });
+
+        formBox.getChildren().addAll(new Label("Type:"), feedTypeField, new Label("Qté:"), qtyField, addBtn);
+
+        VBox content = new VBox(15, historyTable, sep, newLabel, formBox);
+        content.setPadding(new Insets(10));
+        
+        dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefWidth(550);
+        dialog.showAndWait();
     }
 
     // ──────────────────────────────────────────────
@@ -457,13 +545,56 @@ public class ZoneView extends BorderPane {
         Zone selected = tableView.getSelectionModel().getSelectedItem();
         if (selected == null) return;
 
-        TextInputDialog nameDialog = new TextInputDialog(selected.getName());
-        nameDialog.setHeaderText("Nouveau nom pour " + selected.getCode());
-        String newName = nameDialog.showAndWait().orElse(selected.getName());
-        if (newName == null || newName.isBlank()) return;
+        if (selected instanceof LivestockZone) {
+            LivestockZone lz = (LivestockZone) selected;
+            Dialog<ButtonType> dialog = new Dialog<>();
+            dialog.setTitle("Modifier la zone");
+            dialog.setHeaderText("Modification de la zone d'élevage : " + selected.getCode());
 
-        store.getFarmSystem().editZone(selected.getCode(), newName.trim(), selected.getType());
-        refresh();
+            TextField nameField = new TextField(lz.getName());
+            TextField latField = new TextField(lz.getCenter() != null ? String.valueOf(lz.getCenter().getLatitude()) : "0.0");
+            TextField lonField = new TextField(lz.getCenter() != null ? String.valueOf(lz.getCenter().getLongitude()) : "0.0");
+            TextField radField = new TextField(String.valueOf(lz.getRadius()));
+
+            GridPane grid = new GridPane();
+            grid.setHgap(10);
+            grid.setVgap(10);
+            grid.setPadding(new Insets(20, 150, 10, 10));
+
+            grid.add(new Label("Nom :"), 0, 0);
+            grid.add(nameField, 1, 0);
+            grid.add(new Label("GPS Latitude :"), 0, 1);
+            grid.add(latField, 1, 1);
+            grid.add(new Label("GPS Longitude :"), 0, 2);
+            grid.add(lonField, 1, 2);
+            grid.add(new Label("Rayon (m) :"), 0, 3);
+            grid.add(radField, 1, 3);
+
+            dialog.getDialogPane().setContent(grid);
+            dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+            Optional<ButtonType> result = dialog.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                store.getFarmSystem().editZone(selected.getCode(), nameField.getText().trim(), selected.getType());
+                try {
+                    double lat = Double.parseDouble(latField.getText().trim());
+                    double lon = Double.parseDouble(lonField.getText().trim());
+                    double rad = Double.parseDouble(radField.getText().trim());
+                    lz.setBoundary(new Readings.Coordinates(lat, lon), rad);
+                } catch (NumberFormatException e) {
+                    new Alert(Alert.AlertType.ERROR, "Coordonnées GPS invalides.").showAndWait();
+                }
+                refresh();
+            }
+        } else {
+            TextInputDialog nameDialog = new TextInputDialog(selected.getName());
+            nameDialog.setHeaderText("Nouveau nom pour " + selected.getCode());
+            String newName = nameDialog.showAndWait().orElse(selected.getName());
+            if (newName == null || newName.isBlank()) return;
+
+            store.getFarmSystem().editZone(selected.getCode(), newName.trim(), selected.getType());
+            refresh();
+        }
     }
 
     // ──────────────────────────────────────────────

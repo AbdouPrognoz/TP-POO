@@ -3,6 +3,7 @@ package ui.view;
 import Crops.*;
 import Zone.CropZone;
 import Zone.Zone;
+import Zone.StatusZone;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -47,7 +48,7 @@ public class CropView extends BorderPane {
     private void showAddCropDialog() {
         // --- Step 1: choose zone ---
         List<Zone> cropZones = store.getZones().stream()
-                .filter(z -> z instanceof CropZone)
+                .filter(z -> z instanceof CropZone && z.getStatus() == StatusZone.ACTIVE)
                 .collect(Collectors.toList());
 
         if (cropZones.isEmpty()) {
