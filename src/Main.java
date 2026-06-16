@@ -9,7 +9,7 @@ import Zone.*;
 import java.time.LocalDate;
 
 public class Main {
-
+//this is the main testing method before creating the UI
     public static void main(String[] args) {
 
         FarmSystem farm = new FarmSystem();
